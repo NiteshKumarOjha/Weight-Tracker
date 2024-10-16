@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema(
             date: Date,
           },
         ],
+        highestWeight: Number,
+        lowestWeight: Number,
       },
     ],
   },

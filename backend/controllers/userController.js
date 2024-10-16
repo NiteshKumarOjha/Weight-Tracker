@@ -73,7 +73,112 @@ exports.addWeightRecord = async (req, res) => {
     familyMember.weightHistory.push({ weight, date });
     await user.save();
 
-    res.json(familyMember.weightHistory);
+    const sortedWeightHistory = familyMember.weightHistory.sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    res.json(sortedWeightHistory);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.getWeightHistory = async (req, res) => {
+  try {
+    let user = await User.findById(req.user.id);
+    const familyMember = user.familyMembers.id(req.params.id);
+
+    if (!familyMember)
+      return res.status(404).json({ msg: "Family member not found" });
+
+    const sortedWeightHistory = familyMember.weightHistory.sort((a, b) => {
+      return new Date(a.date) - new Date(b.date);
+    });
+
+    res.json(sortedWeightHistory);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.getName = async (req, res) => {
+  try {
+    let user = await User.findById(req.user.id);
+    const familyMember = user.familyMembers.id(req.params.id);
+
+    if (!familyMember)
+      return res.status(404).json({ msg: "Family member not found" });
+
+    const name = familyMember.name;
+    res.json({ name: name });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send("Server Error");
+  }
+};
+
+exports.getWeightSummary = async (req, res) => {
+  try {
+    let user = await User.findById(req.user.id);
+    const familyMember = user.familyMembers.id(req.params.id);
+
+    if (!familyMember) {
+      return res.status(404).json({ msg: "Family member not found" });
+    }
+
+    // Map weightHistory to an array of objects with weight and date
+    const weightRecords = familyMember.weightHistory.map((record) => ({
+      weight: record.weight,
+      date: new Date(record.date).toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }), // Format date to "15 October 2024"
+    }));
+
+    if (weightRecords.length === 0) {
+      return res.json({
+        highestWeight: null,
+        lowestWeight: null,
+        highestWeightDates: [],
+        lowestWeightDates: [],
+      });
+    }
+
+    // Find the highest and lowest weights along with their dates
+    let highestWeight = -Infinity;
+    let lowestWeight = Infinity;
+    const highestWeightDates = [];
+    const lowestWeightDates = [];
+
+    weightRecords.forEach((record) => {
+      // Check for highest weight
+      if (record.weight > highestWeight) {
+        highestWeight = record.weight;
+        highestWeightDates.length = 0; // Reset the array if a new highest weight is found
+        highestWeightDates.push(record.date);
+      } else if (record.weight === highestWeight) {
+        highestWeightDates.push(record.date); // Add date if it's the same as the highest weight
+      }
+
+      // Check for lowest weight
+      if (record.weight < lowestWeight) {
+        lowestWeight = record.weight;
+        lowestWeightDates.length = 0; // Reset the array if a new lowest weight is found
+        lowestWeightDates.push(record.date);
+      } else if (record.weight === lowestWeight) {
+        lowestWeightDates.push(record.date); // Add date if it's the same as the lowest weight
+      }
+    });
+
+    res.json({
+      highestWeight,
+      highestWeightDates,
+      lowestWeight,
+      lowestWeightDates,
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send("Server Error");

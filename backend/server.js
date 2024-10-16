@@ -1,9 +1,16 @@
 const express = require("express");
 const connectDB = require("./config/db");
+const cors = require("cors");
 require("dotenv").config();
 
 const app = express();
 app.use(express.json());
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Adjust this to your frontend's URL
+    credentials: true, // Allow cookies to be sent
+  })
+);
 
 connectDB();
 

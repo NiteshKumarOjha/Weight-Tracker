@@ -9,7 +9,21 @@ exports.signUp = async (req, res) => {
     let user = await User.findOne({ email });
     if (user) return res.status(400).json({ msg: "User already exists" });
 
-    user = new User({ name, email, password });
+    user = new User({
+      name,
+      email,
+      password,
+      familyMembers: [
+        {
+          name: name,
+          relation: "Self",
+          weightHistory: [], // Initialize with an empty array or any default values if needed
+          highestWeight: null, // Set to null or a default value
+          lowestWeight: null, // Set to null or a default value
+        },
+      ],
+    });
+
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(password, salt);
     await user.save();
